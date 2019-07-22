@@ -1,24 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style media="screen">
+
+form {
+  font-family: monospace;
+  padding: 20px 20px;
+}
+
+input[type=text] {
+  border: 1px solid;
+  border-radius: 4px;
+}
+
+input[type=button], input[type=submit], input[type=reset] {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 7px 50px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+</style>
 <title>File upload</title>
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
   <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
+    {{ upload_folder }} /
+    <input type="text" name="path" placeholder="..." list="existing-dirs" autocomplete="off">
+    <datalist id="existing-dirs">
+      {% for dir in existing_dirs %}
+        <option> {{ dir }} </option>
+      {% endfor %}
+    </datalist>
+    / <input type="file" name="file"><br>
+    <input type="submit" value="⭱ Upload ⭱">
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class=flashes>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
   </form>
 
 </body>
