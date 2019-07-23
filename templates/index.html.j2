@@ -9,6 +9,7 @@ form {
 }
 
 input[type=text] {
+  width: 300px;
   border: 1px solid;
   border-radius: 3px;
 }
@@ -46,13 +47,7 @@ input[type=button], input[type=submit], input[type=reset] {
 <body>
 
   <form method=post enctype=multipart/form-data>
-    {{ upload_folder }} /
-    <input type="text" name="path" placeholder="..." list="existing-dirs" autocomplete="off">
-    <datalist id="existing-dirs">
-      {% for dir in existing_dirs %}
-        <option> {{ dir }} </option>
-      {% endfor %}
-    </datalist>
+    <input type="text" name="path" placeholder="complete or relative dir path">
     / <input type="file" name="file"><br>
     <input type="submit" value="⭱ Upload ⭱">
     {% with messages = get_flashed_messages(with_categories=true) %}
