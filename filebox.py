@@ -9,7 +9,8 @@ from config import SECRET_KEY
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
-app.secret_key = SECRET_KEY
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config['LAST_USED_DIR'] = None
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -30,13 +31,14 @@ def upload_file():
             upload_dir_path.mkdir(parents=True, exist_ok=True)
             full_file_path = upload_dir_path / filename
             file.save(str(full_file_path))
+            app.config['LAST_USED_DIR'] = str(upload_dir_path)
             app.logger.info(f"Uploaded {full_file_path}")
             flash(f"{full_file_path} uploaded successfully", 'action-success')
         else:
             flash(f"No file", 'action-fail')
             return redirect(request.url)
 
-    return render_template("index.html.j2")
+    return render_template("index.html.j2", last_used_dir=app.config['LAST_USED_DIR'])
 
 
 if __name__ == '__main__':

@@ -47,8 +47,8 @@ input[type=button], input[type=submit], input[type=reset] {
 <body>
 
   <form method=post enctype=multipart/form-data>
-    <input type="text" name="path" placeholder="complete or relative dir path">
-    / <input type="file" name="file"><br>
+    <input type="text" name="path" {% if last_used_dir %} value="{{ last_used_dir }}" {% else %} placeholder="complete or relative dir path" {% endif %}>
+    \ <input type="file" name="file"><br>
     <input type="submit" value="⭱ Upload ⭱">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
