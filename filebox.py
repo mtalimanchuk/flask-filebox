@@ -2,10 +2,31 @@
 import logging
 from pathlib import Path
 
-from flask import Flask, flash, request, redirect, render_template
+from flask import Flask, flash, redirect, render_template, request
 from werkzeug.utils import secure_filename
 
 from config import SECRET_KEY
+
+DEFAULT_IP = '127.0.0.1'
+DEFAULT_PORT = 5000
+
+
+def get_arguments():
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument('--ip', dest='ip', default=DEFAULT_IP, help='IP address to bind to. Default is ' + DEFAULT_IP)
+    parser.add_argument('--port', dest='port', default=DEFAULT_PORT,
+                        help='TCP Port to bind to. Default is ' + str(DEFAULT_PORT))
+    options = parser.parse_args()
+
+    return options
+
+
+options = get_arguments()
+
+ip = options.ip
+port = int(options.port)
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -42,4 +63,4 @@ def upload_file():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host=ip, port=port)
