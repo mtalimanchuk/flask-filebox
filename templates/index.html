@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.0.0/dist/fetch.umd.min.js"></script>
+<style media="screen">
+
+html {
+  background-color: #e5f1f3;
+}
+
+form {
+  font-family: monospace;
+  padding: 20px 20px;
+}
+
+input[type=text] {
+  width: 300px;
+  border: 1px solid;
+  border-radius: 3px;
+}
+
+input[type=button], input[type=submit], input[type=reset] {
+  background-color: #30617b;
+  border: none;
+  color: white;
+  padding: 7px 50px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.action-success, .action-fail {
+  margin: 10px 0px;
+  padding:12px;
+}
+
+.action-success {
+  color: #4F8A10;
+  background-color: #DFF2BF;
+}
+
+.action-fail {
+  color: #D8000C;
+  background-color: #FFD2D2;
+}
+
+#dir-content {
+  font-family: 'Lucida Console', Monaco, monospace;
+}
+.directory-link {
+  background-color: #7ba8b840;
+}
+
+.directory-link:hover {
+  background-color: #7ba8b8aa;
+}
+
+#breadcrumbs-div {
+  background-color: #7ba8b8cc;
+  margin-top: 1%;
+  margin-bottom: 1%;
+}
+
+.breadcrumb-directory-link {
+  display: inline-block;
+  padding: 0.7%;
+  border-top: 1px transparent solid;
+  border-bottom: 1px transparent solid;
+}
+
+.breadcrumb-directory-link:hover  {
+  background-color: #7ba8b8ee;
+  border-top: 1px #30617b solid;
+  border-bottom: 1px #30617b solid;
+}
+.breadcrumb-directory-arrow {
+  display: inline-block;
+  color: #e5f1f3;
+}
+
+</style>
+<title>File upload</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+  <form method=post enctype=multipart/form-data>
+    <input id="dir-box" type="text" name="path" {% if last_used_dir %} value="{{ last_used_dir }}" {% else %} placeholder="complete or relative dir path" {% endif %}>
+    \ <input type="file" name="file" multiple><br>
+    <input type="submit" value="⭱ Upload ⭱">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flashes-div" class="flashes">
+          {% for category, message in messages %}
+            <div class="{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </form>
+  <div id="dir-content">
+    <div id="breadcrumbs-div"></div>
+    <table id="content-table"></table>
+  </div>
+<script>
+var inputBox = document.getElementById("dir-box");
+var lastInputBoxValue = inputBox.value;
+
+var contentTable = document.getElementById("content-table");
+var breadcrumbsDiv = document.getElementById("breadcrumbs-div");
+var dirContent = [];
+
+var flashesDiv = document.getElementById("flashes-div");
+
+updateDirContent(inputBox.value);
+
+inputBox.addEventListener("keydown", filterTab);
+inputBox.addEventListener("keyup", updateDirBox);
+
+function filterTab(event) {
+  if (event.keyCode == 9) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function updateDirBox(event) {
+  let newValue = inputBox.value;
+  if (newValue != lastInputBoxValue) {
+    lastInputBoxValue = newValue;
+    updateDirContent(newValue);
+  }
+}
+
+function changeDirectory(event) {
+  flashesDiv.innerHTML = "";
+  let newPath = event.target.getAttribute("path");
+  inputBox.value = newPath;
+  updateDirContent(newPath);
+}
+
+function updateContentView(data) {
+  console.log(data);
+
+  if (data.exists) {
+    updateBreadcrumbView(data.breadcrumbs);
+    updateTableView(data.content, data.parent);
+  } else {
+    showMkDirView();
+  }
+}
+
+function updateBreadcrumbView(breadcrumbs) {
+  breadcrumbsDiv.innerHTML = "";
+
+  breadcrumbs.forEach((element, i) => {
+    let breadcrumbElement = document.createElement('div');
+    let breadcrumbText = document.createTextNode(element.name);
+    
+    breadcrumbElement.setAttribute("path", element.absolute);
+    breadcrumbElement.addEventListener("click", changeDirectory);
+    breadcrumbElement.setAttribute("class", "breadcrumb-directory-link");
+    breadcrumbElement.appendChild(breadcrumbText);
+    breadcrumbsDiv.appendChild(breadcrumbElement);
+
+    let breadcrumbArrow = document.createElement('div');
+    let breadcrumbArrowText = document.createTextNode('>');
+
+    breadcrumbArrow.setAttribute("class", "breadcrumb-directory-arrow");
+    breadcrumbArrow.appendChild(breadcrumbArrowText);
+    breadcrumbsDiv.appendChild(breadcrumbArrow);
+  });
+}
+
+function updateTableView(content, parent) {
+  contentTable.innerHTML = "";
+
+  if (content){
+    let parentItemRow = contentTable.insertRow(-1);
+
+    let parentCell = parentItemRow.insertCell(0);
+
+    let parentElement = document.createElement('div');
+    let parentText = document.createTextNode("..");
+
+    parentElement.setAttribute("path", parent);
+    parentElement.addEventListener("click", changeDirectory);
+    parentElement.appendChild(parentText);
+    parentCell.setAttribute("class", "directory-link");
+    parentCell.appendChild(parentElement);
+
+    content.forEach(element => {
+      let itemRow = contentTable.insertRow(-1);
+
+      let titleCell = itemRow.insertCell(0);
+      let downloadZipCell = itemRow.insertCell(1);
+      let downloadTarCell = itemRow.insertCell(2);
+
+      let titleElement = document.createElement('div');
+      let titleText = document.createTextNode(element.name);
+
+      titleElement.setAttribute("path", element.absolute);
+      if (element.is_dir) {
+        titleElement.addEventListener("click", changeDirectory);
+        titleCell.setAttribute("class", "directory-link");
+      }
+      titleElement.appendChild(titleText);
+      titleCell.appendChild(titleElement);
+
+      let downloadZipElement = document.createElement('a');
+      downloadZipElement.setAttribute("href", "/api/download?ftype=zip&path=" + element.absolute);
+      downloadZipElement.setAttribute("target", "_blank");
+      downloadZipElement.innerHTML = "ZIP";
+      downloadZipCell.appendChild(downloadZipElement);
+
+      let downloadTarElement = document.createElement('a');
+      downloadTarElement.setAttribute("href", "/api/download?ftype=tar&path=" + element.absolute);
+      downloadTarElement.setAttribute("target", "_blank");
+      downloadTarElement.innerHTML = "TAR";
+      downloadTarCell.appendChild(downloadTarElement);
+    });
+  }
+}
+
+function showMkDirView() {
+  
+}
+
+function updateDirContent(path) {
+  fetch("/api/path", {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(path),
+  })
+    .then(response => response.json())
+    .then(data => updateContentView(data));
+}
+</script>
+</body>
+</html>
